@@ -1,5 +1,4 @@
 #pragma GCC target("avx2")
-//#pragma GCC optimize("O3")
 
 #include "Model.h"
 
@@ -53,6 +52,7 @@ namespace db::model {
   void CreateModel(Model *model, unsigned width, unsigned height)
   {
     assert(model);
+    assert(width & height);
 
     model->pixels = (uint32_t *) calloc(width*height, sizeof(uint32_t));
     assert(model->pixels);
@@ -108,6 +108,7 @@ namespace db::model {
   void Update$scalar(Model *model, unsigned maxIterationCount)
   {
     assert(model);
+    assert(maxIterationCount);
 
     auto transformation =
       [] (std::complex<float> z, std::complex<float> c)
@@ -148,7 +149,8 @@ namespace db::model {
   void Update$vector(Model *model, unsigned maxIterationCount)
   {
     assert(model);
-
+    assert(maxIterationCount);
+    
     unsigned width  = model-> width;
     unsigned height = model->height;
     for (unsigned i = 0; i < height; ++i)

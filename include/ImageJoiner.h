@@ -6,16 +6,16 @@ namespace db::image {
 
   struct bmp {
     uint32_t *pixels;
-    unsigned  width;
-    unsigned height;
+    unsigned   width;
+    unsigned  height;
     uint32_t   redMask;
     uint32_t greenMask;
     uint32_t  blueMask;
     uint32_t alphaMask;
   };
 
-  void  CreateBmp(bmp *bmp);
-  void  CreateBmp(bmp *bmp, unsigned width, unsigned height);
+  void  CreateBmp(bmp *_bmp);
+  void  CreateBmp(bmp *_bmp, const bmp *source);
   void DestroyBmp(bmp *bmp);
 
   bool Load(bmp *bmp, const char *path);

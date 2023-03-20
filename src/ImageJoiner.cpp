@@ -18,9 +18,7 @@ namespace db::image {
     uint32_t reserved;
     uint32_t offset;
   };
-#pragma pack(pop)
 
-#pragma pack(push, 1)
   struct BmpHeader {
     uint32_t size;
     int32_t  width;
@@ -34,15 +32,13 @@ namespace db::image {
     uint32_t colors;
     uint32_t colorsImportant;
   };
-#pragma pack(pop)
 
-#pragma pack(push, 1)
   struct ColorInfo {
-    uint32_t redMask{ 0x00ff0000 };
-    uint32_t greenMask{ 0x0000ff00 };
-    uint32_t blueMask{ 0x000000ff };
-    uint32_t alphaMask{ 0xff000000 };
-    uint32_t colorSpaceType{ 0x73524742 };
+    uint32_t   redMask;
+    uint32_t greenMask;
+    uint32_t  blueMask;
+    uint32_t alphaMask;
+    uint32_t colorSpaceType;
     uint32_t unused[16];
   };
 #pragma pack(pop)
@@ -50,10 +46,19 @@ namespace db::image {
   void CreateBmp(bmp *bmp)
   {
     assert(bmp);
+
+    *bmp = {};
   }
 
-  void CreateBmp(bmp *bmp, unsigned width, unsigned height)
+  void CreateBmp(bmp *_bmp, const bmp *source)
   {
+    assert(_bmp);
+    assert(source);
+
+    *_bmp = *source;
+    _bmp->pixels = (uint32_t *)
+      calloc((size_t) (_bmp->width*_bmp->height), sizeof(uint32_t));
+    assert(_bmp->pixels);
   }
 
   void DestroyBmp(bmp *bmp)
@@ -61,14 +66,17 @@ namespace db::image {
     assert(bmp);
 
     free(bmp->pixels);
-
     *bmp = {};
   }
 
   bool Load(bmp *bmp, const char *path)
   {
-      FILE *file = fopen(path, "rb");
-    assert(file);
+    assert(bmp);
+    assert(path);
+
+    FILE *file = fopen(path, "rb");
+    if (!file)
+      return false;
 
     FileHeader fileHeader{};
     BmpHeader   bmpHeader{};
@@ -96,8 +104,8 @@ namespace db::image {
       calloc((size_t) (bmpHeader.width*bmpHeader.height), sizeof(uint32_t));
     assert(bmp->pixels);
 
-    bmp-> width = bmpHeader. width;
-    bmp->height = bmpHeader.height;
+    bmp-> width = (unsigned) bmpHeader. width;
+    bmp->height = (unsigned) bmpHeader.height;
 
     bmp->  redMask = colorInfo.  redMask;
     bmp->greenMask = colorInfo.greenMask;
@@ -127,8 +135,8 @@ namespace db::image {
     assert(first-> blueMask == second-> blueMask);
     assert(first->alphaMask == second->alphaMask);
 
-    int width  = first-> width;
-    int height = first->height;
+    unsigned width  = first-> width;
+    unsigned height = first->height;
 
     accum->width  =  width;
     accum->height = height;
@@ -143,8 +151,8 @@ namespace db::image {
       calloc((size_t) (width*height), sizeof(uint32_t));
     assert(accum->pixels);
 
-    for (int i = 0; i < height; ++i)
-      for (int j = 0; j < width; ++j)
+    for (unsigned i = 0; i < height; ++i)
+      for (unsigned j = 0; j < width; ++j)
         {
           uint32_t  firstColor = *(first ->pixels + j + i*width);
           uint32_t secondColor = *(second->pixels + j + i*width);
@@ -169,8 +177,8 @@ namespace db::image {
     assert(first-> blueMask == second-> blueMask);
     assert(first->alphaMask == second->alphaMask);
 
-    int width  = first-> width;
-    int height = first->height;
+    unsigned width  = first-> width;
+    unsigned height = first->height;
 
     accum->width  =  width;
     accum->height = height;
@@ -185,8 +193,8 @@ namespace db::image {
       calloc((size_t) (width*height), sizeof(uint32_t));
     assert(accum->pixels);
 
-    for (int i = 0; i < height; ++i)
-      for (int j = 0; j < width - 8; j += 8)
+    for (unsigned i = 0; i < height; ++i)
+      for (unsigned j = 0; j < width - 8; j += 8)
         {
           vector8u  firstColors = (vector8u)
             _mm256_loadu_si256((__m256i *) (first ->pixels + j + i*width));
