@@ -15,5 +15,4 @@ namespace db::model {
 
   void Update$scalar(Model *model, unsigned maxIterationCount);
   void Update$vector(Model *model, unsigned maxIterationCount);
-
 }

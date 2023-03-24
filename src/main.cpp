@@ -14,7 +14,7 @@
 const unsigned ITER_MAX = 50;
 const unsigned WIDTH  = 1200;
 const unsigned HEIGHT = 1000;
-const unsigned TEST_COUNT = 1024;
+unsigned TEST_COUNT = 100;
 
 void TestJoiningImages();
 void TestMandelbrotSet();
@@ -38,6 +38,11 @@ void TestingJoiningImages(
                          );
 int main()
 {
+  printf("Input test reapet count: ");
+  while (!scanf(" %u", &TEST_COUNT))
+    while(getchar() != '\n') continue;
+  while(getchar() != '\n') continue;
+
   printf("Chose test(Default: 1):\n1) Mandelbrot set\n2) Joining images\n");
   char code = 0;
   scanf(" %c", &code);
@@ -107,10 +112,10 @@ void TestingMebdelbrotSet(
   bool isVisible = false;
   sf::RectangleShape rect(sf::Vector2f(1.f, 1.f));
   sf::Event event{};
-  timeval stop{}, start{};
+  timeval start{}, stop{};
 
   printf("Start %s test.\n", name);
-  gettimeofday(&start, NULL);
+  gettimeofday(&start, nullptr);
   for (unsigned i = 0; i < TEST_COUNT; ++i)
     {
       while (window->pollEvent(event))
@@ -130,7 +135,7 @@ void TestingMebdelbrotSet(
             }
       window->display();
     }
-  gettimeofday(&stop, NULL);
+  gettimeofday(&stop, nullptr);
 
   printf("End %s test. Time: %ld us\n", name,
          (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec);
@@ -156,10 +161,10 @@ void TestingJoiningImages(
   bool isVisible = false;
   sf::RectangleShape rect(sf::Vector2f(1.f, 1.f));
   sf::Event event{};
-  timeval stop{}, start{};
+  timeval start{}, stop{};
 
   printf("Start %s test.\n", name);
-  gettimeofday(&start, NULL);
+  gettimeofday(&start, nullptr);
   for (unsigned i = 0; i < TEST_COUNT; ++i)
     {
       while (window->pollEvent(event))
@@ -185,7 +190,7 @@ void TestingJoiningImages(
             }
       window->display();
     }
-  gettimeofday(&stop, NULL);
+  gettimeofday(&stop, nullptr);
 
   printf("End %s test. Time: %ld us\n", name,
          (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec);

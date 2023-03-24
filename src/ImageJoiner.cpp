@@ -151,6 +151,7 @@ namespace db::image {
       calloc((size_t) (width*height), sizeof(uint32_t));
     assert(accum->pixels);
 
+    for (int _ = 0; _ < 1000; ++_)
     for (unsigned i = 0; i < height; ++i)
       for (unsigned j = 0; j < width; ++j)
         {
@@ -159,7 +160,7 @@ namespace db::image {
 
           uint32_t color = (secondColor & second->alphaMask) ? secondColor : firstColor;
 
-          *(accum->pixels + j + i*width) = color;
+          //*(accum->pixels + j + i*width) = color;
         }
   }
 
@@ -193,18 +194,22 @@ namespace db::image {
       calloc((size_t) (width*height), sizeof(uint32_t));
     assert(accum->pixels);
 
+    for (int _ = 0; _ < 1000; ++_)
     for (unsigned i = 0; i < height; ++i)
       for (unsigned j = 0; j < width - 8; j += 8)
         {
-          vector8u  firstColors = (vector8u)
-            _mm256_loadu_si256((__m256i *) (first ->pixels + j + i*width));
-          vector8u secondColors = (vector8u)
-            _mm256_loadu_si256((__m256i *) (second->pixels + j + i*width));
-
+          vector8u  firstColors = (vector8u) {0, 0, 0, 0, 0, 0, 0, 0};
+            //_mm256_loadu_si256((__m256i *) (first ->pixels + j + i*width));
+          vector8u secondColors = (vector8u) {0, 0, 0, 0, 0, 0, 0, 0};
+            //_mm256_loadu_si256((__m256i *) (second->pixels + j + i*width));
+          //3009951182:444471635(1000)
+          //903331335:133279237(300)
+          //772034926:113926838(256)
+          //904145772:133572908(300)
           vector8u colors =
             (secondColors & second->alphaMask) ? secondColors : firstColors;
 
-          _mm256_storeu_si256((__m256i *) (accum->pixels + j + i*width), (__m256i) colors);
+          //_mm256_storeu_si256((__m256i *) (accum->pixels + j + i*width), (__m256i) colors);
 
         }
   }
