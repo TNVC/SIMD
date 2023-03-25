@@ -151,16 +151,23 @@ namespace db::image {
       calloc((size_t) (width*height), sizeof(uint32_t));
     assert(accum->pixels);
 
-    for (int _ = 0; _ < 1000; ++_)
     for (unsigned i = 0; i < height; ++i)
       for (unsigned j = 0; j < width; ++j)
         {
           uint32_t  firstColor = *(first ->pixels + j + i*width);
           uint32_t secondColor = *(second->pixels + j + i*width);
 
-          uint32_t color = (secondColor & second->alphaMask) ? secondColor : firstColor;
-
-          //*(accum->pixels + j + i*width) = color;
+          uint32_t color = 0;
+          for (int _ = 0; _ < 1000; ++_)
+            {
+              ++color;
+              float alpha = ((secondColor & 0xFF000000) >> 24) / 255.f;
+              firstColor &= 0xFFFFFF;
+              secondColor &= 0xFFFFFF;
+              color = (uint32_t) (secondColor*alpha + firstColor*(1 - alpha));
+              color |= 0xFF000000;
+            }
+          *(accum->pixels + j + i*width) = color;
         }
   }
 
@@ -194,23 +201,31 @@ namespace db::image {
       calloc((size_t) (width*height), sizeof(uint32_t));
     assert(accum->pixels);
 
-    for (int _ = 0; _ < 1000; ++_)
     for (unsigned i = 0; i < height; ++i)
       for (unsigned j = 0; j < width - 8; j += 8)
         {
-          vector8u  firstColors = (vector8u) {0, 0, 0, 0, 0, 0, 0, 0};
-            //_mm256_loadu_si256((__m256i *) (first ->pixels + j + i*width));
-          vector8u secondColors = (vector8u) {0, 0, 0, 0, 0, 0, 0, 0};
-            //_mm256_loadu_si256((__m256i *) (second->pixels + j + i*width));
-          //3009951182:444471635(1000)
-          //903331335:133279237(300)
-          //772034926:113926838(256)
-          //904145772:133572908(300)
-          vector8u colors =
-            (secondColors & second->alphaMask) ? secondColors : firstColors;
+          vector8u  firstColors = (vector8u) _mm256_loadu_si256((__m256i *) (first ->pixels + j + i*width));
+          vector8u secondColors = (vector8u) _mm256_loadu_si256((__m256i *) (second->pixels + j + i*width));
 
-          //_mm256_storeu_si256((__m256i *) (accum->pixels + j + i*width), (__m256i) colors);
+          vector8u colors{};
+          for (int _ = 0; _ < 1000; ++_)
+            {
+              ++colors;
+              vector8f alphas = (vector8f)
+                _mm256_cvtepi32_ps((__m256i) (((secondColors & 0xFF000000) >> 24))) / 255.f;
 
+              firstColors &= 0xFFFFFF;
+              secondColors &= 0xFFFFFF;
+
+              colors = (vector8u)
+                _mm256_cvtps_epi32(
+                                   _mm256_cvtepi32_ps((__m256i) secondColors)*alphas +
+                                   _mm256_cvtepi32_ps((__m256i)  firstColors)*(1 - alphas));
+
+              colors |= 0xFF000000;
+            }
+
+          _mm256_storeu_si256((__m256i *) (accum->pixels + j + i*width), (__m256i) colors);
         }
   }
 

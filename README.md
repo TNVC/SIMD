@@ -2,12 +2,12 @@
 **Выполнил Буторин Даниил**
 ## Цель:
     Изучить  возможности компиляторов набора GCC  к  intrinsic  функциям и
-    использованию набора команд для векторов; применить их путем отрисовки 
+    использованию набора команд для векторов; применить их путем отрисовки
     множества  Мандельброта   и   наложения  изображений  формата  ".bmp".
-## В работе используются: 
-    Язык программирования C\C++; набор  компиляторов GCC; инструмент 
+## В работе используются:
+    Язык программирования C\C++; набор  компиляторов GCC; инструмент
     callgring  утилиты valgring; инструмент визуализации KCachegring.
-## Экспериментальная установка:  
+## Экспериментальная установка:
     Ноутбук  фирмы   "Honor"  на  процессоре "AMD  Ryzen  5  5500U
     with Radeon Graphics"  с OS "GNU/Linux 22.04.1-Ubuntu x86_64".
 ## Теоретическая справка:
@@ -51,7 +51,7 @@ void Update$vector(Model *model);
 ```clike
 void Update$scalar(Model *model)
 {
-    auto transform = 
+    auto transform =
       [] (std::complex<float> z, std::complex<float> c)
       -> std::complex<float>
       { return z*z + c; };
@@ -60,33 +60,33 @@ void Update$scalar(Model *model)
     {
       return z.real()*z.real() + z.imag()*z.imag();
     };
-    
+
     for (size_t i = 0; i < model->height; ++i)
       for (size_t j = 0; j < model->width; ++j)
       {
           flaot x = ReMin + ReFactor*j;
           flaot y = ImMin + ImFactor*i;
-        
+
           std::complex<float> z0(x, y);
           std::complex<float> z (x, y);
-        
+
           size_t iterationCount = 0;
           while (iterationCount < MAX_ITERATION_COUNT)
           {
               if (getSquareOfModule(z) > 4.f)
                   break;
-              
+
               z = transform(z, z0);
-              
+
               ++iterationCount;
           }
-        
+
           float  factor = iterationCount / MAX_ITERATION_COUNT;
           float rfactor = 1 - factor;
           uint8 r = 9  *rfactor* factor* factor*factor*255;
           uint8 g = 15 *rfactor*rfactor* factor*factor*255;
           uint8 b = 8.5*rfactor*rfactor*rfactor*factor*255;
-        
+
           model[j][i] = Color(r, g, b);
       }
 }
@@ -105,56 +105,51 @@ void Update$vector(Model *model)
               (j, 8, [](float val)->float{ return ReMin + ReFactor*val; });
           vector8f imag = Vector
               (i, 8, [](float val)->float{ return ImMin + ImFactor*val; });
-          
+
           vector8f startReal = real;
           vector8f startImag = imag;
-        
-          vector8i increment = Vector(1); 
-        
+
+          vector8i increment = Vector(1);
+
           vector8u iterationCount = Vector(0);
           while (Vector(iterationCount < MAX_ITERATION_COUNT).hasnt(true))
           {
               increment &= Vector(real*real + imag*imag > 4.f);
               if (increment.all(0))
                   break;
-              
-              vector8f temp = real*real - imag*imag; 
+
+              vector8f temp = real*real - imag*imag;
               imag = 2.f*real*imag;
               real = temp;
-              
+
               iterationCount += increnent;
           }
-        
+
           vector8f factor = iterationCount / MAX_ITERATION_COUNT;
           vector8f rfactor = 1 - factor;
           vector8u r = 9  *rfactor* factor* factor*factor*255;
           vector8u g = 15 *rfactor*rfactor* factor*factor*255;
           vector8u b = 8.5*rfactor*rfactor*rfactor*factor*255;
-        
+
           Vector.store(&model[j][i], Color(r, g, b));
       }
 }
 ```
 
 #### Итоги главы
-Составим таблицу по результатам тестирования
-| Версия | Количество запусков | Общее время |
-| ------ | ------ | ------ |
-| Update$scalar      | 1024 | 1453442720 us | 
-| Update$scalar      | 1024 | 1453366101 us | 
-| Update$scalar      | 100  |  141617663 us | 
-| Update$scalar      | 100  |  141819831 us | 
-| Update$vector      | 1024 |   26849830 us |
-| Update$vector      | 1024 |   27434100 us |
-| Update$vector      | 100  |    2677489 us |
-| Update$vector      | 100  |    2683991 us |
-| Update$otherVector | 1000 |   60075043 us |
-| Update$otherVector | 100  |    6046550 us |
-| Update$otherVector | 100  |    6070999 us |
+Составим графики по результатам тестирования.
 
-Как видно из данных векторная обработка быстрей скалярной, реализованной с помощью перегруженных опреторов, в 53.2 раза.
-Но при использовании встраиваемых функций мы наблюдаем только прирост в 23.5 раз.
-Как видно наша весторная реализация напротив реализации компилятора проигравает в 2.3 раза.
+![alt text](https://github.com/TNVC/SIMD/blob/master/source/plot0.png?raw=true)
+![alt text](https://github.com/TNVC/SIMD/blob/master/source/plot1.png?raw=true)
+![alt text](https://github.com/TNVC/SIMD/blob/master/source/plot2.png?raw=true)
+![alt text](https://github.com/TNVC/SIMD/blob/master/source/plot3.png?raw=true)
+
+Для начало сравним следующие версии: скалярная и векторная с использованием перегруженных операторов, реализация которых зашита в компиляторе.
+Видно, что в таком сравнении прирост скорости составляет 53.2 раза.
+Также была реализованна вкрсия с явным использование встраиваемых функций(то есть без рперегруженных операторов).
+Если ее сравнивать со скалярной, то прирост скорости составляет 23.5 раз.
+Данная разница в приростах между векторными версиями(2.3 раза) может быть обусловленна фактом, что компилятор лучше оптимизирует вычисления по сравнению с человеком(векторная реализация с прямым использованием встраиваемых функций никак не заменяла порядок вычислений).
+Из данных наблюдений можно сделать следующий вывод: надо помогать компилятору оптимизировать код(например: добовлять работу с векторами), но не делать всю работу за него(например: организовать порядок вычислений сложного арифмитического выражения).
 
 ### _Глава вторая. Наложение изображений._
 > Для наложения будет использоваться несжатый bmp формат с 32 битами на цвет.
@@ -164,34 +159,48 @@ void Update$vector(Model *model)
 Код тестировался на изображениях размером 3996x2997.
 
 #### Итоги главы
-Составим таблицу по результатам тестирования
-| Версия | Количество запусков | Общее время |
-| ------ | ------ | ------ |
-| Update$scalar | 1024 | 57719105 us | 
-| Update$scalar | 1024 | 57996748 us |
-| Update$scalar | 1024 | 58071485 us | 
-| Update$vector | 1024 | 26888798 us |
-| Update$vector | 1024 | 26513938 us |
-| Update$vector | 1024 | 25516790 us |
+Составим графики по результатам тестирования.
 
-Как видно из данных, векторная реализация в среднем выполнялась в 2.2 раза быстрей скалярной.
+![alt text](https://github.com/TNVC/SIMD/blob/master/source/plot4.png?raw=true)
 
-Было сделано предположение, что вычисления не лимитирующий фактор данной задачи, а обращение к памяти. Было решено протестировать реализацию без обращения к памяти(работа с константными значениями**.
+В данном случае сравнивая скалярную версию мы видим прирлст скорости в 4.3.
+Малый прирост скорости можно обусловить тем фактом, что лимитрирующий фактор - работа с памятью, но не вычисления.
+Для проверки предположения было проведено сравнение двух версий с увеличенным весом вычислений на фоне работы с памятью(для каждого обращения к памяти - 1000 вычислений).
 
-| Версия | Количество запусков | Общее время |
-| ------ | ------ | ------ |
-| Update$scalar | 1000000 | 3009951182 us |
-| Update$scalar |  300000 |  903331335 us |
-| Update$scalar |  300000 |  904145772 us |
-| Update$scalar |  256000 |  772034926 us |
-| Update$vector | 1000000 |  444471635 us |
-| Update$vector |  300000 |  133279237 us |
-| Update$vector |  300000 |  133572908 us |
-| Update$vector |  256000 |  113926838 us |
+То есть, данный код
+```clike=
+    Color  firstColor = first ->pixels[i][j];
+    Color secondColor = second->pixels[i][j];
 
-В данном случае, векторная реализация быстрей скалярной в 6.8 раз , что доказывает, что лимитирующим фактором была работа с памятью.
+    float alpha = secondColor.alpha / 255.f;
+    Color color = secondColor*alpha + firstColor*(1 - alpha);
+
+    accum->pixels[i][j] = color;
+```
+был заменен на
+```clike=
+    Color  firstColor = first ->pixels[i][j];
+    Color secondColor = second->pixels[i][j];
+
+    Color color{};
+    for (int i = 0; i < 1000; ++i)
+      {
+        float alpha = secondColor.alpha / 255.f;
+        color = secondColor*alpha + firstColor*(1 - alpha);
+      }
+
+    accum->pixels[i][j] = color;
+```
+
+Составим графики по результатам тестирования.
+
+![alt text](https://github.com/TNVC/SIMD/blob/master/source/plot5.png?raw=true)
+
+В данном случае, векторная реализация быстрей скалярной в 8.4 раза.
+Из данных результатов можно сделать вывод, что лимитирующим фактором была работа с памятью.
 
 #### Итоги
-- Из данной работы мы поняли, что векторная обработка быстрей скалярной от 2.2 до 53.2 раз, в том числе, и в случаях, когда вычисления - не лимитирующий фактор.
-- Большую эффективность векторной обработки над скалярной в расчете множества Мандельброта можно обусловить большей сложностью высчитывания скаляра по сравнению с наложением, а также не самой лучшей реализацией скалярного вычисления.
+- Из данной работы мы поняли, что векторная обработка быстрей скалярной от 4.3 до 53.2 раз, в том числе, и в случаях, когда вычисления - не лимитирующий фактор.
+- Надо помогать компилятору оптимизировать код, но не делать всю работу зв него.
+- Вычисления - не всегда лимитирующий фактор.
 - Также мы научились применять средства векторной обработки компиляторного набора GCC.
