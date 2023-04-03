@@ -142,7 +142,6 @@ void Update$vector(Model *model)
 ![alt text](https://github.com/TNVC/SIMD/blob/master/source/plot0.png?raw=true)
 ![alt text](https://github.com/TNVC/SIMD/blob/master/source/plot1.png?raw=true)
 ![alt text](https://github.com/TNVC/SIMD/blob/master/source/plot2.png?raw=true)
-![alt text](https://github.com/TNVC/SIMD/blob/master/source/plot3.png?raw=true)
 
 Для начало сравним следующие версии: скалярная и векторная с использованием перегруженных операторов, реализация которых зашита в компиляторе.
 Видно, что в таком сравнении прирост скорости составляет (53.2 +- 0.08) раза.
