@@ -154,18 +154,29 @@ namespace db::image {
     for (unsigned i = 0; i < height; ++i)
       for (unsigned j = 0; j < width; ++j)
         {
-          uint32_t  firstColor = *(first ->pixels + j + i*width);
-          uint32_t secondColor = *(second->pixels + j + i*width);
+          uint64_t  firstColor = (uint64_t) *(first ->pixels + j + i*width);
+          uint64_t secondColor = (uint64_t) *(second->pixels + j + i*width);
 
-          uint32_t color = 0;
+          volatile uint32_t color = 0;
           for (int _ = 0; _ < 1000; ++_)
             {
-              ++color;
+              /*
               float alpha = ((secondColor & 0xFF000000) >> 24) / 255.f;
-              firstColor &= 0xFFFFFF;
+
+               firstColor &= 0xFFFFFF;
               secondColor &= 0xFFFFFF;
               color = (uint32_t) (secondColor*alpha + firstColor*(1 - alpha));
               color |= 0xFF000000;
+              */
+
+              uint8_t alpha = (uint8_t) (secondColor >> 24);
+
+              uint64_t rb = ((firstColor & 0x00FF00FF)*(256-alpha) + (secondColor & 0x00FF00FF)*alpha) >> 8;
+              rb &= 0x00FF00FF;
+              uint64_t ag = ((firstColor & 0xFF00FF00)*(256-alpha) + (secondColor & 0xFF00FF00)*alpha) >> 8;
+              ag &= 0xFF00FF00;
+
+              color = (uint32_t) (rb | ag);
             }
           *(accum->pixels + j + i*width) = color;
         }
@@ -204,13 +215,15 @@ namespace db::image {
     for (unsigned i = 0; i < height; ++i)
       for (unsigned j = 0; j < width - 8; j += 8)
         {
-          vector8u  firstColors = (vector8u) _mm256_loadu_si256((__m256i *) (first ->pixels + j + i*width));
-          vector8u secondColors = (vector8u) _mm256_loadu_si256((__m256i *) (second->pixels + j + i*width));
+          vector8u  firstColors = (vector8u)
+            _mm256_loadu_si256((__m256i *) (first ->pixels + j + i*width));
+          vector8u secondColors = (vector8u)
+            _mm256_loadu_si256((__m256i *) (second->pixels + j + i*width));
 
-          vector8u colors{};
+          volatile vector8u colors{};
           for (int _ = 0; _ < 1000; ++_)
             {
-              ++colors;
+              /*
               vector8f alphas = (vector8f)
                 _mm256_cvtepi32_ps((__m256i) (((secondColors & 0xFF000000) >> 24))) / 255.f;
 
@@ -223,6 +236,16 @@ namespace db::image {
                                    _mm256_cvtepi32_ps((__m256i)  firstColors)*(1 - alphas));
 
               colors |= 0xFF000000;
+              */
+
+              vector8u alphas = secondColors >> 24;
+
+              vector8u rb = ((firstColors & 0x00FF00FF)*(256-alphas) + (secondColors & 0x00FF00FF)*alphas) >> 8;
+              rb &= 0x00FF00FF;
+              vector8u ag = ((firstColors & 0xFF00FF00)*(256-alphas) + (secondColors & 0xFF00FF00)*alphas) >> 8;
+              ag &= 0xFF00FF00;
+
+              colors = rb | ag | 0xFF000000;
             }
 
           _mm256_storeu_si256((__m256i *) (accum->pixels + j + i*width), (__m256i) colors);
